@@ -148,6 +148,12 @@ Using RNN:
 - [Sequence to Sequence Learning with Neural Networks](https://arxiv.org/abs/1409.3215)
 - [Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation](https://arxiv.org/abs/1406.1078)
 
+## Teacher FOrcing
+Seq2seq model generate translations by feeding the output of the decoder back in as the next inputs, this way there is no set length on the output sequence. When training, intuitively, you would compare the decorder output sequence with the target sequence to calculate the loss for each step then sum the steps together for the total loss. But this doesn't work well in practice becuase in the early stages of training the model is naive. It will make wrong predictions early in the sequence. This prolbem compounds as the model keeps making wrong predictions and the translated sequence gets further and further from the target sequence.
+    ![Tux, the Linux mascot](./images/train_seq2seq.png)
+To avoid this problem, you can use the ground truth words as decoder inputs instead of the decoder outputs. Even if the model makes a wrong prediction, it pretends as if it's made the correct one and this can continue. This method makes training much faster and has a special name, teacher forcing. There are some variations on this tool. For example, you can slowly start using decoder outputs over time, so that leads into training, you are no longer feeding in the target words. This is known as curriculum learning
+[What is Teacher Forcing?](https://towardsdatascience.com/what-is-teacher-forcing-3da6217fed1c)
+
 ### Image Captioning
 Similar papers at same time:
 - [Deep Captioning with Multimodal Recurrent Neural Networks (m-RNN)](https://arxiv.org/abs/1412.6632)
@@ -169,6 +175,22 @@ B is bean width. Let's say B=3 for step2. Hard wiring the previous word, to eval
 
 # Attention
 [Neural Machine Translation by Jointly Learning to Align and Translate](https://arxiv.org/abs/1409.0473) <br>
+
+Recurrent models typically take in a sequence in the order it is written and use that to output a sequence. Each element in the sequence is associated with its step in computation time tt. (i.e. if a word is in the third element, it will be computed at t_3t
+3
+​
+ ). These models generate a sequence of hidden states h_th
+t
+​
+ , as a function of the previous hidden state h_{t−1}h
+t−1
+​
+  and the input for position t.
+
+The sequential nature of models you learned in the previous course (RNNs, LSTMs, GRUs) does not allow for parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. In other words, if you rely on sequences and you need to know the beginning of a text before being able to compute something about the ending of it, then you can not use parallel computing. You would have to wait until the initial computations are complete. This is not good, because if your text is too long, then 1) it will take a long time for you to process it and 2) you will lose a good amount of information mentioned earlier in the text as you approach the end.
+
+Therefore, attention mechanisms have become critical  for sequence modeling in various tasks, allowing modeling of dependencies without caring too much about their distance in the input or output sequences.
+
 
 
 encoder read and memorize the whole sentence, and decoder output translated sentence. Encoder/Decoder works poorly on long sentences (Bleu Score drop at length 20)
@@ -193,11 +215,25 @@ The input timestamps can be much bigger than output timestamps. Audio input is h
 ![Tux, the Linux mascot](./images/trigger.png)
 
 # Transformer
+
+One of the biggest issues with these RNNs, is that they make use of sequential computation. That means, in order for your code to process the word "you", it has to first go through "are" and then "you". Two other issues with RNNs are the:
+
+Loss of information: For example, it is harder to keep track of whether the subject is singular or plural as you move further away from the subject.
+
+Vanishing Gradient: when you back-propagate, the gradients can become really small and as a result,  your model will not be learning much.
+
+In contrast, transformers are based on attention and don't require any sequential computation per layer, only a single step is needed. Additionally, the gradient steps that need to be taken from the last output to the first input in a transformer is just one. For RNNs, the number of steps increases with longer sequences. Finally, transformers don't suffer from vanishing gradients problems that are related to the length of the sequences. Here is an image that might help you visualize it.
+![Tux, the Linux mascot](./images/rnn_trans1.png)
+![Tux, the Linux mascot](./images/rnn_trans2.png)
 ## why?
 with increased complexity for sequential model, each unit becomes a bottlneck: each unit was like a bottleneck to the flow of information. Because to compute the output of this final unit, for example, you first have to compute the outputs of all of the units that come before
 ## what is transformer?
 [attention is all you need](https://arxiv.org/abs/1706.03762)
 RNN process one output at a time; CNN instead can take in a lot of pixels and process in parallel.
+## queries, keys, values
+unlike the original form of attention, scale dot-product attention consists of only two Matrix multiplications and no neural networks. Since matrix multiplication is highly optimized in modern deep learning frameworks. This form of attention is much faster to compute but this also means that the alignments between the source and target languages must be learned elsewhere.
+![Tux, the Linux mascot](./images/scaled_dot_prod_attention.png)
+
 ## Self Attention
 ![Tux, the Linux mascot](./images/sa_i.png)
 use q,k, v to learn what is the value of word in context to the word being calculated. This makes learning attention between current word and any word in context to be parallel. weights for Q, K, V is parameters being learned.
@@ -208,3 +244,13 @@ use q,k, v to learn what is the value of word in context to the word being calcu
 ![Tux, the Linux mascot](./images/transformer_arch.png)
 with positional encoding * Masked multi-head attention:
 ![Tux, the Linux mascot](./images/attention_position.png)
+
+# Paper Readings
+- Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (Raffel et al, 2019)
+- Reformer: The Efficient Transformer (Kitaev et al, 2020)
+- Attention Is All You Need (Vaswani et al, 2017)
+-​ Deep contextualized word representations (Peters et al, 2018)
+- The Illustrated Transformer (Alammar, 2018)
+- The Illustrated GPT-2 (Visualizing Transformer Language Models) (Alammar, 2019)
+- BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al, 2018)
+- How GPT3 Works - Visualizations and Animations (Alammar, 2020)

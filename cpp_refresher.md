@@ -19,6 +19,9 @@ There are two challenges with using gcc alone, both of which relate to the fact 
 
 Secondly, large projects will usually contain multiple linked binaries, each of which is compiled individually. If you're working in large project and only change one .cpp file, you generally only need to recompile that one binary - the rest of your project does not need to be compiled again! Compiling an entire project can take up to hours for large projects, and as such being intelligent about only compiling binaries with updated source code can save lots of time. GCC in and of itself is not smart enough to recognize what files in your project have changed and which haven't, and as such will recompile binaries needlessly - you'd need to manually change your gcc calls for the same optimizations. Luckily, there are tools that solve both of these problems!
 
+## resources
+[c++ on windows](https://arachnoid.com/cpptutor/setup_windows.html)
+
 # Namespae & Basic Types
 http://www.cplusplus.com/doc/tutorial/other_data_types/
 
@@ -78,5 +81,79 @@ http://www.cplusplus.com/doc/tutorial/other_data_types/
     std::cout << "\nThe area of the room is: " << area << std::endl;
     return 0;
     }
+## Pointers
+http://www.cplusplus.com/doc/tutorial/pointers/
+
+Java is all pointers, they call references.
+C++ use a lot of local variables, actually fewer pointers, so it run faster because no need to dereference pointers.
+Pointers are the addresses of variables.
+54 is the value of the variable. where is a? The location of 'a' can be found using a pointer!
+
+    int a = 54;
+     // this is an integer variable with value = 54
+    std::cout<< &a<<"\n";
+    //This will print the LOCATION of 'a'
+
+    // this is a pointer that holds the address of the variable 'a'.
+    // if 'a' was a float, rather than int, so should be its pointer.
+    int * pointerToA = &a;
+
+    // If we were to print pointerToA, we'd obtain the address of 'a':
+    std::cout << "pointerToA stores " << pointerToA << '\n';
+
+    // If we want to know what is stored in this address, we can dereference pointerToA:
+    std::cout << "pointerToA points to " << * pointerToA << '\n';
+
+    int *pointerGivenInt;
+    int **pointerPointerGivenInt;
+    pointerGivenInt = &givenInt;
+    pointerPointerGivenInt = &pointerGivenInt;
+    std::cout<< "pointer of givenInt = " << *pointerGivenInt<<"\n";
+    std::cout<< "pointer of pointer of givenInt = " << **pointerPointerGivenInt<< "\n";
+
+if we have a pointer and want to access the value stored in that address? That process is called dereferencing, and it is indicated by adding the operator * before the variable's name. This same operator should be used to declare a variable that is meant to store a pointer
+
+compare these two:
+
+    int a = 54;
+    int * pointerToA = &a;
+    // in decleration it should assign an address
+and
+
+    int * pointerI;
+    int number;
+    pointerI = &number;
+    *pointerI = 45;
+    // now it means dereference
+
+modify value in a pointer
+
+    #include<iostream>
+    #include<string>
+
+    int main ()
+    {
+    int * pointerI;
+    int number;
+    pointerI = &number;
+    * pointerI = 45;
+    std::cout << "number = "<<number<<"\n";
+    std::cout << "*pointerI = "<<*pointerI<<"\n";
+    * pointerI = 46;
+    std::cout << "number = "<<number<<"\n";
+    number = 47;
+    std::cout << "number = "<<number<<"\n";
+    std::cout << "*pointerI = "<<*pointerI<<"\n";
+    return 0;
+    }
+    // output following:
+    number = 45
+    *pointerI = 45
+    number = 46
+    number = 47
+    *pointerI = 47
 ## IDE
 http://www.codeblocks.org/
+
+## cheatsheet
+https://en.cppreference.com/w/cpp/language/operator_incdec
