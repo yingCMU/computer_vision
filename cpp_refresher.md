@@ -152,6 +152,84 @@ modify value in a pointer
     number = 46
     number = 47
     *pointerI = 47
+## Class
+the default is to make all members private.
+Private members are listed first. If you do this, there is no need to use the 'private' keyword. If you list them after the public keyword, you will need to identify them using the private keyword.
+So we add the keyword "public" and all members listed after it are accessible:
+
+    #include<iostream>
+    using namespace std;
+
+    class Dog
+    {
+        private:
+            int license;
+        public:
+            Dog();
+            Dog(int licenseIn);
+            void setLicense(int licenseIn);
+            int getLicense();
+            ~Dog();
+    };
+
+    Dog::Dog()
+    {
+    license = 0;
+    }
+
+    Dog::~Dog()
+    {
+        cout<<"\nDeleting the dog";
+    }
+    Dog::Dog(int licenseIn)
+    {
+    license = licenseIn;
+    }
+    void Dog::setLicense(int licenseIn)
+    {
+        license = licenseIn;
+    }
+    int Dog::getLicense()
+    {
+        return license;
+    }
+    int main()
+    {
+        Dog d2(666666);
+        cout<<d2.getLicense();
+        return 0;
+    }
+It is conventional to put classes in a header file.
+## Memory Mangement
+Start braces signify the start of memory management and end braces cleanup.
+### Constructors
+A constructor is special function that is executed whenever we create a new instance of the class. It is used to set initial values of data members of the class. **Constructors do not return a value, including void.**
+
+    // The declaration for a constructor is:
+    ClassName::ClassName();
+    // The definition of a constructor is:
+    ClassName::ClassName()
+    {
+        dataMemberName1 = value;
+        dataMemberName2 = value;
+        ...
+    }
+### Destructors
+Destructors are special class functions that are called whenever an object goes out of scope. Just like a constructor, a destructor is called automatically. Destructors must have the same name as the class.. Destructors cannot:
+- return a value
+- accept parameters
+```
+// Declaring a destructor:
+~className()  //this is a destructor
+// Defining a destructor:
+classname::~classname()
+{
+     //tasks to be completed before going out of scope
+}
+```
+One of the more important tasks of a destructor is releasing memory that was allocated by the class constructor and member functions.
+
+
 ## IDE
 http://www.codeblocks.org/
 
