@@ -1,17 +1,13 @@
-#include <iostream>
-#include <vector>
-#include <string>
-using namespace std;
-
 // https://code.visualstudio.com/docs/cpp/config-clang-mac
+
+#include <iostream>
+using namespace std;
 
 int main()
 {
-    vector<string> msg {"Hello", "C++", "World", "from", "VS Code", "and the C++ extension!"};
+   int * ptr;
+   int a = 5;
+//   *ptr = 5;
+   cout<< "results:"<<a;
 
-    for (const string& word : msg)
-    {
-        cout << word << " ";
-    }
-    cout << endl;
 }
