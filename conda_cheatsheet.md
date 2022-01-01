@@ -1,0 +1,1 @@
+- install numpy and jupyter: `conda install numpy jupyter notebook`
