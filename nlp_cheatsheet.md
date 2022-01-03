@@ -186,6 +186,7 @@ B is bean width. Let's say B=3 for step2. Hard wiring the previous word, to eval
 
 # Attention
 [Neural Machine Translation by Jointly Learning to Align and Translate](https://arxiv.org/abs/1409.0473) <br>
+http://nlp.seas.harvard.edu/2018/04/03/attention.html <br>
 
 Recurrent models typically take in a sequence in the order it is written and use that to output a sequence. Each element in the sequence is associated with its step in computation time tt. (i.e. if a word is in the third element, it will be computed at t_3t
 3
@@ -284,7 +285,7 @@ with positional encoding * Masked multi-head attention:
 - Reformer: The Efficient Transformer (Kitaev et al, 2020)
 - Attention Is All You Need (Vaswani et al, 2017)
 -​ Deep contextualized word representations (Peters et al, 2018)
-- The Illustrated Transformer (Alammar, 2018)
+- The Illustrated Transformer (Alammafr, 2018)
 - The Illustrated GPT-2 (Visualizing Transformer Language Models) (Alammar, 2019)
 - BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Devlin et al, 2018)
 - How GPT3 Works - Visualizations and Animations (Alammar, 2020)
@@ -311,3 +312,60 @@ machine translation: Encoder–Decoder approaches](https://arxiv.org/abs/1409.12
 compress all the necessary information of a source sentence into a fixed-length vector. This may
 make it difficult for the neural network to cope with long sentences, especially those that are longer
 than the sentences in the training corpus.
+
+
+# Bert
+https://github.com/google-research/bert
+
+ if we get embeddings for the word 'Python' in the preceding two sentences using an embedding model such as word2vec, the embedding of the word 'Python' would be the same in both sentences, and so this renders the meaning of the word 'Python' the same in both sentences. This is because word2vec is the context-free model, so it will ignore the context and always give the same embedding for the word 'Python' irrespective of the context. .
+unlike context-free models such as word2vec, which generate static embeddings irrespective of the context, BERT generates dynamic embeddings based on the context. <br>
+During
+pre-training, the model is trained on unlabeled
+data over different pre-training tasks. For finetuning,
+the BERT model is first initialized with
+the pre-trained parameters, and all of the parameters
+are fine-tuned using labeled data from the
+downstream tasks
+- We can perceive BERT as the transformer, but only with the encoder.
+
+Intuitively, it is reasonable
+to believe that a deep bidirectional model is
+strictly more powerful than either a left-to-right
+model or the shallow concatenation of a left-toright
+and a right-to-left model.
+
+- pre-training
+we feed the sentence as an input to the transformer's encoder and get the representation of each word in the sentence as an output.
+efore feeding all the tokens to BERT, we convert the tokens into embeddings using an embedding layer called token embedding. Note that the value of token embeddings will be learned during training.
+## WordPiece tokenizer 
+BERT uses a special type of tokenizer called a WordPiece tokenizer. The WordPiece tokenizer follows the subword tokenization scheme. Let's understand how the WordPiece tokenizer works with the help of an example. Consider the following sentence:
+
+"Let us start pretraining the model."
+
+Now, if we tokenize the sentence using the WordPiece tokenizer, then we obtain the tokens as shown here:
+
+tokens = [let, us, start, pre, ##train, ##ing, the, model]
+We can observe that while tokenizing the sentence using the WordPiece tokenizer, the word pertaining is split into the following subwords – pre, ##train, ##ing. But what does this imply? 
+
+When we tokenize using the WordPiece tokenizer, first we check whether the word is present in our vocabulary. If the word is present in the vocabulary, then we use it as a token. If the word is not present in the vocabulary, then we split the word into subwords and we check whether the subword is present in the vocabulary. If the subword is present in the vocabulary, then we use it as a token. But if the subword is not present in the vocabulary, then again we split the subword and check whether it is present in the vocabulary. If it is present in the vocabulary, then we use it as a token, otherwise we split it again. In this way, we keep splitting and check the subword with the vocabulary until we reach individual characters. This is effective in handling the out-of-vocabulary (OOV) words.
+ The hash signs before the tokens ##train and ##ing indicate that it is a subword and that it is preceded by other words.
+
+## Masked Word
+To predict the masked token, we feed the representation of the masked token returned by BERT to the feedforward network with a softmax activation. Now, the feedforward network takes  as input and returns the probability of all the words in our vocabulary to be the masked word
+
+Note that in the initial iterations, our model will not return the correct probability because the weights of the feedforward network and encoder layers of BERT will not be optimal. However, over a series of iterations, with backpropagation, we update the weights of the feedforward network and encoder layers of BERT and learn the optimal weights. 
+![Tux, the Linux mascot](./images/bert_mask1.png)
+![Tux, the Linux mascot](./images/bert_mask_2.png)
+
+## Next Sentence prediction
+we feed two sentences to BERT and it has to predict whether the second sentence is the follow-up (next sentence) of the first sentence. if the pair of sentence is a a follow-up pair, we label this sentence pair as isNext, indicating that sentence B follows on from sentence A. Otherwise, label the pai as notNext. The model returns isNext if sentence B follows on from sentence A, otherwise, it will return notNext as an output. Thus, NSP is essentially a binary classification task. By performing the NSP task, our model can understand the relation between the two sentences. Understanding the relation between two sentences is useful in the case of many downstream tasks, such as question answering and text generation. Okay, so how can we obtain the dataset for the NSP task? We can generate the dataset from any monolingual corpus. Let's say we have a couple of documents. For the isNext class, we take any two consecutive sentences from one document and label them as isNext, and for the notNext class, we take one sentence from one document and another sentence from a random document and label them as notNext. Note that we need to maintain 50% of data points in the isNext class and 50% of data points in the notNext class. <br>
+
+We learned that NSP is a binary classification task. But now we have just the representation of each token in the sentence pair. How can we classify the sentence pair based on these representations? To perform classification, we simply take the representation of the [CLS] token and feed it to the feedforward network with the softmax function, which then returns the probability of our sentence pair being isNext and notNext. Wait! Why do we need to take the embedding of the [CLS] token alone? Why not the embeddings of other tokens?
+The [CLS] token basically holds the aggregate representation of all the tokens. So, it basically holds the aggregate representation of our sentences. Thus, we can ignore the representation of all the other tokens
+![Tux, the Linux mascot](./images/bert_sequence.png)
+in the paper: 'The first
+token of every sequence is always a special classification
+token ([CLS]). The final hidden state
+corresponding to this token is used as the aggregate
+sequence representation for classification
+tasks'
