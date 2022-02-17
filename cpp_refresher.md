@@ -1,3 +1,6 @@
+# Data Types
+- [Why size_t matters](https://www.embedded.com/why-size_t-matters/)
+- uint32_t
 # Compiling
     $ g++ main.cpp -o main.out
 
@@ -36,6 +39,79 @@ http://www.cplusplus.com/doc/tutorial/other_data_types/
         //Output: The value of integer is 4543
         const int weightGoal = 100;
     }
+## Namespace scope
+The potential scope of a name declared in a namespace begins at the point of declaration and includes the rest of the namespace and all namespace definitions with an identical namespace name that follow, plus, for any using-directive that introduced this name or its entire namespace into another scope, the rest of that scope.
+
+The top-level scope of a translation unit ("file scope" or "global scope") is also a namespace and is properly called "global namespace scope". The potential scope of a name declared in the global namespace scope begins at the point of declaration and ends at the end of the translation unit.
+
+The potential scope of a name declared in an unnamed namespace or in an inline namespace includes the potential scope that name would have if it were declared in the enclosing namespace.
+
+```
+namespace N { // scope of N begins (as a member of global namespace)
+    int i; // scope of i begins
+    int g(int a) { return a; } // scope of g begins
+    int j(); // scope of j begins
+    void q(); // scope of q begins
+    namespace {
+        int x; // scope of x begins
+    } // scope of x continues (member of unnamed namespace)
+    inline namespace inl { // scope of inl begins
+        int y; // scope of y begins
+    } // scope of y continues (member of inline namespace)
+} // scopes of i, g, j, q, inl, x, and y pause
+```
+```
+namespace {
+    int l = 1; // scope of l begins
+} // scope of l continues (member of unnamed namespace)
+```
+```
+namespace N { // scopes of i, g, j, q, inl, x, and y resume
+    int g(char a) { // overloads N::g(int)
+        return l + a; // l from unnamed namespace is in scope
+    }
+//  int i; // error: duplicate definition (i is already in scope)
+    int j(); // OK: duplicate function declaration is allowed
+    int j() { // OK: definition of the earlier-declared N::j()
+        return g(i); // calls N::g(int)
+    }
+//  int q(); // error: q is already in scope with a different return type
+} // scopes of i, g, j, q, inl, x, and y pause
+
+int main() {
+    using namespace N; // scopes of i, g, j, q, inl, x, and y resume
+    i = 1; // N::i is in scope
+    x = 1; // N::(anonymous)::x is in scope
+    y = 1; // N::inl::y is in scope
+    inl::y = 2; // N::inl is also in scope
+} // scopes of i, g, j, q, inl, x, and y end
+```
+## Class scope
+The potential scope of a name declared in a class begins at the point of declaration and includes the rest of the class body, all the derived classes bodies, the function bodies (even if defined outside the class definition or before the declaration of the name), function default arguments, function exception specifications, in-class brace-or-equal initializers, and all these things in nested classes, recursively.
+
+## Unqualified name lookup
+For an unqualified name, that is a name that does not appear to the right of a scope resolution operator ::, name lookup examines the scopes as described below, until it finds at least one declaration of any kind, at which time the lookup stops and no further scopes are examined.
+
+For a name used in a user-declared namespace outside of any function or class, this namespace is searched before the use of the name, then the namespace enclosing this namespace before the declaration of this namespace, etc until the global namespace is reached.
+```
+int n = 1; // declaration
+
+namespace N
+{
+    int m = 2;
+
+    namespace Y
+    {
+        int x = n; // OK, lookup finds ::n
+        int y = m; // OK, lookup finds ::N::m
+        int z = k; // Error: lookup fails
+    }
+
+    int k = 3;
+}
+```
+
+
 ## Enum
     enum type_name {
         value1,
@@ -81,8 +157,139 @@ http://www.cplusplus.com/doc/tutorial/other_data_types/
     std::cout << "\nThe area of the room is: " << area << std::endl;
     return 0;
     }
+## When do we pass arguments by reference or pointer?
+https://www.geeksforgeeks.org/when-do-we-pass-arguments-by-reference-or-pointer/
+1) To modify local variables of the caller function
+2) For passing large sized arguments: If an argument is large, passing by reference (or pointer) is more efficient because only an address is really passed, not the entire object. For example, let us consider the following Employee class and a function printEmpDetails() that prints Employee details.
+3) To avoid Object Slicing: If we pass an object of subclass to a function that expects an object of superclass then the passed object is sliced if it is pass by value. For example, consider the following program, it prints “This is Pet Class”.  This point is valid only for struct and class variables as we don’t get any efficiency advantage for basic types like int, char, etc.
+```
+#include <iostream>
+
+using namespace std;
+
+class Pet {
+public:
+    virtual string getDescription() const
+    {
+        return "This is Pet class";
+    }
+};
+
+class Dog : public Pet {
+public:
+    virtual string getDescription() const
+    {
+        return "This is Dog class";
+    }
+};
+
+void describe(Pet p)
+{ // Slices the derived class object
+    cout << p.getDescription() << '\n';
+}
+
+int main()
+{
+    Dog d;
+    describe(d);
+    return 0;
+}
+```
+Output:
+This is Pet Class <br>
+```
+#include <iostream>
+
+using namespace std;
+
+class Pet {
+public:
+    virtual string getDescription() const
+    {
+        return "This is Pet class";
+    }
+};
+
+class Dog : public Pet {
+public:
+    virtual string getDescription() const
+    {
+        return "This is Dog class";
+    }
+};
+
+void describe(const Pet& p)
+{ // Doesn't slice the derived class object.
+    cout << p.getDescription() << '\n';
+}
+
+int main()
+{
+    Dog d;
+    describe(d);
+    return 0;
+}
+```
+Output:
+This is Dog Class <br>
+
+4) To achieve Run Time Polymorphism in a function: We can make a function polymorphic by passing objects as reference (or pointer) to it. For example, in the following program, print() receives a reference to the base class object. Function print() calls the base class function show() if base class object is passed, and derived class function show() if derived class object is passed. This point is also not valid for basic data types like int, char, etc.
+```
+#include <iostream>
+using namespace std;
+
+class base {
+public:
+    virtual void show()
+    { // Note the virtual keyword here
+        cout << "In base\n";
+    }
+};
+
+class derived : public base {
+public:
+    void show() { cout << "In derived\n"; }
+};
+
+// Since we pass b as reference, we achieve run time
+// polymorphism here.
+void print(base& b) { b.show(); }
+
+int main(void)
+{
+    base b;
+    derived d;
+    print(b);
+    print(d);
+    return 0;
+}
+```
+Output:
+```
+In base
+In derived
+```
 ## Pointers
-http://www.cplusplus.com/doc/tutorial/pointers/
+- [pointer basics](http://www.cplusplus.com/doc/tutorial/pointers/)
+- [Pointer declaration](https://en.cppreference.com/w/cpp/language/pointer)
+
+we can declare and initialize pointer at same step or in multiple line.
+```
+int a = 10;
+  int *p = &a;
+```
+```
+    int *p;
+    p = &a;
+```
+But a reference is different:
+```
+int a=10;
+int &p=a;  //it is correct
+   but
+int &p;
+ p=a;    // it is incorrect as we should declare and initialize references at single step.
+ ```
 
 Java is all pointers, they call references.
 C++ use a lot of local variables, actually fewer pointers, so it run faster because no need to dereference pointers.
@@ -152,6 +359,245 @@ modify value in a pointer
     number = 46
     number = 47
     *pointerI = 47
+
+## References
+Call by value: By default, cpp uses call by value to pass arguments, which means a function can not alter the arguments used.
+
+- [Reference declaration](https://en.cppreference.com/w/cpp/language/reference): Declares a named variable as a reference, that is, an alias to an already-existing object or function.
+```
+    std::string s = "Ex";
+    std::string& r1 = s;
+    const std::string& r2 = s;
+
+    r1 += "ample";           // modifies s
+//  r2 += "!";               // error: cannot modify through reference to const
+    std::cout << r2 << '\n'; // prints s, which now holds "Example"
+```
+
+https://www.educative.io/edpresso/differences-between-pointers-and-references-in-cpp
+References can be used ,simply, by name.
+
+    int a = 5;
+    int &ref = a;
+
+### pass-by-reference semantics in function calls
+References allow modifying variable values passed to functions or to avoid passing an entire copy (value) of a large object to a function.
+
+    void cpp_ReferenceGood(int& r) {   // reference to an integer
+        r = 40;                       // modify the referenced object
+    }
+    void cpp_ReferencesBad(const int& r) {   // constant reference to   message
+        r = 20;                     // !!!compile error!!!
+    }
+
+    void cpp_References() {
+        int x = 10;
+        cpp_ReferenceGood(x);
+        cout << dec << x << endl;     // ensure cout not still in hex mode.
+       // Output is "40".
+    }
+Warning - only use references for:
+- 1) passing data to functions (either to modify or as an efficient way to avoid passing value), or
+- 2) As return types of operator overload functions. Never keep or hold a reference or return them from functions
+### Access memebers of a pointer to class object
+using ->: The -> operator dereferences the pointer. The expressions e->member and (*(e)).member (where e represents a pointer) yield identical results (except when the operators -> or * are overloaded).
+
+The member access operators . and -> are used to refer to members of struct, union, and class types. Member access expressions have the value and type of the selected member.
+
+https://docs.microsoft.com/en-us/cpp/cpp/member-access-operators-dot-and?view=msvc-170
+
+https://en.cppreference.com/w/cpp/language/operator_member_access#Built-in_member_access_operators
+
+### Pointer to member operators
+The pointer-to-member operators .* and ->* return the value of a specific class member for the object specified on the left side of the expression. <br>
+https://docs.microsoft.com/en-us/cpp/cpp/pointer-to-member-operators-dot-star-and-star?view=msvc-170
+## Difference between reference and pointer
+https://www.geeksforgeeks.org/pointers-vs-references-cpp/?ref=lbp
+
+A pointer in C++ is a variable that holds the memory address of another variable.
+
+A reference is an alias for an already existing variable. Once a reference is initialized to a variable, it cannot be changed to refer to another variable. Hence, a reference is similar to a const pointer.
+
+Note that the asterisk (*) used when declaring a pointer only means that it is a pointer (it is part of its type compound specifier), and should not be confused with the dereference operator seen a bit earlier, but which is also written with an asterisk (*). They are simply two different things represented with the same sign.
+
+A pointer has itws own memory address whereas a reference shares the same memory addres with the original varable:
+```
+ int &p = a;
+   cout << &p << endl << &a;
+```
+
+When to use What?
+
+The performances are exactly the same, as references are implemented internally as pointers. But still you can keep some points in your mind to decide when to use what :
+- Use references : In function parameters and return types.
+- Use pointers:
+    - Use pointers if pointer arithmetic or passing NULL-pointer is needed. For example for arrays (Note that array access is implemented using pointer arithmetic).
+    - To implement data structures like linked list, tree, etc and their algorithms because to point different cell, we have to use the concept of pointers.
+## Passing By Pointer Vs Passing By Reference in C++
+1) Passing by Pointer: Here, the memory location of the variables is passed to the parameters in the function, and then the operations are performed.
+2) Passing by Reference: It allows a function to modify a variable without having to create a copy of it. We have to declare reference variables. The memory location of the passed variable and parameter is the same and therefore, any change to the parameter reflects in the variable as well.
+
+A reference is the same object, just with a different name and a reference must refer to an object. Since references can’t be NULL, they are safer to use.
+
+- A pointer can be re-assigned while a reference cannot, and must be assigned at initialization only.
+- The pointer can be assigned NULL directly, whereas the reference cannot.
+- Pointers can iterate over an array, we can use increment/decrement operators to go to the next/previous item that a pointer is pointing to.
+- A pointer is a variable that holds a memory address. A reference has the same memory address as the item it references.
+- A pointer to a class/struct uses ‘->’ (arrow operator) to access its members whereas a reference uses a ‘.’ (dot operator)
+- A pointer needs to be dereferenced with * to access the memory location it points to, whereas a reference can be used directly.
+### Passing pointer to a pointer as a parmeter to function
+If a pointer is passed to a function as a parameter and tried to be modified then the changes made to the pointer does not reflects back outside that function. This is because only a copy of the pointer is passed to the function. It can be said that “pass by pointer” is passing a pointer by value. In most cases, this does not present a problem. But the problem comes when you modify the pointer inside the function. Instead of modifying the variable, you are only modifying a copy of the pointer and the original pointer remains unmodified.
+```
+#include <iostream>
+
+using namespace std;
+
+int global_Var = 42;
+
+// function to change pointer value
+void changePointerValue(int* pp)
+{
+    pp = &global_Var;
+}
+
+int main()
+{
+    int var = 23;
+    int* ptr_to_var = &var;
+
+    cout << "Passing Pointer to function:" << endl;
+
+    cout << "Before :" << *ptr_to_var << endl; // display 23
+
+    changePointerValue(ptr_to_var);
+
+    cout << "After :" << *ptr_to_var << endl; // display 23
+
+    return 0;
+}
+```
+Output:
+```
+Passing Pointer to function:
+Before :23
+After :23
+```
+This problem can ve resolved by passing the address of the pointer to the function
+```
+int global_var = 42;
+
+// function to change pointer to pointer value
+void changePointerValue(int** ptr_ptr)
+{
+    *ptr_ptr = &global_var;
+}
+
+int main()
+{
+    int var = 23;
+    int* pointer_to_var = &var;
+
+    cout << "Passing a pointer to a pointer to function " << endl;
+
+    cout << "Before :" << *pointer_to_var << endl; // display 23
+
+    changePointerValue(&pointer_to_var);
+
+    cout << "After :" << *pointer_to_var << endl; // display 42
+
+    return 0;
+}
+```
+A reference allows called function to modify a local variable of the caller function. For example, consider the following example program where fun() is able to modify local variable x of main().
+```
+void fun(int &x) {
+    x = 20;
+}
+
+int main() {
+    int x = 10;
+    fun(x);
+    cout<<"New value of x is "<<x;
+    return 0;
+}
+```
+Output:
+New value of x is 20
+
+Below program shows how to pass a “Reference to a pointer” to a function:
+```
+// function to change Reference to pointer value
+void changeReferenceValue(int*& pp)
+{
+    pp = &gobal_var;
+}
+
+int main()
+{
+    int var = 23;
+    int* ptr_to_var = &var;
+
+    cout << "Passing a Reference to a pointer to function" << endl;
+
+    cout << "Before :" << *ptr_to_var << endl; // display 23
+
+    changeReferenceValue(ptr_to_var);
+
+    cout << "After :" << *ptr_to_var << endl; // display 42
+
+    return 0;
+}
+```
+### Returning reference from function
+```
+#include <iostream>
+
+using namespace std;
+
+int global_var = 42;
+
+// function to return reference value
+int& ReturnReference()
+{
+    return global_var;
+}
+
+int main()
+{
+    int var = 23;
+    int* ptr_to_var = &var;
+
+    cout << "Returning a Reference " << endl;
+
+    cout << "Before :" << *ptr_to_var << endl; // display 23
+
+    ptr_to_var = &ReturnReference();
+
+    cout << "After :" << *ptr_to_var << endl; // display 42
+
+    return 0;
+}
+```
+output:
+```
+Returning a Reference
+Before :23
+After :42
+```
+### On References and Pointers
+References are typically used to be able to modify a value passed to a function. They can also be used to pass a reference to an object instead of copying it to functions. But:
+1. References can never be null which means they cannot be used for optional values
+2. References do not have ownership semantics, so objects cannot be deleted using references
+
+To have a class optionally (dynamically) contain an object of another class one must use a pointer. And pointers provide mechanisms for controlling the ownership of the dynamically created object.
+There are 3 kinds of pointers:
+- unique_ptr<> allows one object to own another object,
+- shared_ptr<> allows an object to be shared amongst other objects, and
+- weak_ptr<> is used when no ownership is needed.
+Warning -Do not use legacy C-style raw pointers and deletealways use containment, unique_ptr, or shared_ptr
+
+### New Operator
+https://docs.microsoft.com/en-us/cpp/cpp/new-operator-cpp?view=msvc-170
 ## Class
 the default is to make all members private.
 Private members are listed first. If you do this, there is no need to use the 'private' keyword. If you list them after the public keyword, you will need to identify them using the private keyword.
@@ -200,6 +646,7 @@ So we add the keyword "public" and all members listed after it are accessible:
         return 0;
     }
 It is conventional to put classes in a header file.
+
 ## Memory Mangement
 Start braces signify the start of memory management and end braces cleanup.
 ### Constructors
@@ -250,6 +697,109 @@ A constructor is special function that is executed whenever we create a new inst
         cout<<p1.getName();
         return 0;
     }
+## [Initialization](https://en.cppreference.com/w/cpp/language/initialization)
+1. [Declarators](https://en.cppreference.com/w/cpp/language/declarations)
+2. [new expression](https://en.cppreference.com/w/cpp/language/new)
+
+### [Member Initialize lists](https://en.cppreference.com/w/cpp/language/constructor)
+```
+#include <fstream>
+#include <string>
+#include <mutex>
+#include <iostream>
+struct Base
+{
+    int n;
+};
+
+struct Class : public Base
+{
+    unsigned char x;
+    unsigned char y;
+    std::mutex m;
+    std::lock_guard<std::mutex> lg;
+    std::fstream f;
+    std::string s;
+
+    Class(int x) : Base{123}, // initialize base class
+        x(x),     // x (member) is initialized with x (parameter)
+        y{0},     // y initialized to 0
+        f{"test.cc", std::ios::app}, // this takes place after m and lg are initialized
+        s(__func__), // __func__ is available because init-list is a part of constructor
+        lg(m),    // lg uses m, which is already initialized
+        m{}       // m is initialized before lg even though it appears last here
+    {}            // empty compound statement
+
+    Class(double a) : y(a + 1),
+        x(y), // x will be initialized before y, its value here is indeterminate
+        lg(m)
+    {} // base class initializer does not appear in the list, it is
+       // default-initialized (not the same as if Base() were used, which is value-init)
+
+    Class()
+    try // function-try block begins before the function body, which includes init list
+      : Class(0.0) // delegate constructor
+    {
+        // ...
+    }
+    catch (...)
+    {
+        // exception occurred on initialization
+    }
+};
+
+int main()
+{
+    Class c;
+    Class c1(65);
+    Class c2(0.1);
+    Base b{123};
+    std::cout <<"c.x=" << c.x << std::endl;
+
+    std::cout <<"c1.x=" << c1.x << std::endl;
+    std::cout <<"c1.n=" <<c1.n<< std::endl;
+    std::cout <<"c2.y=" <<c2.y<< std::endl;
+}
+```
+Output:
+- note x and y is char, 0 does not print out anything;
+- in c2, x is declared first in class definition so it is initialized before y.
+```
+c.x=
+c1.x=A
+c1.n=123
+c2.y=
+```
+### Initialization order
+The order of member initializers in the list is irrelevant: the actual order of initialization is as follows:
+
+1) If the constructor is for the most-derived class, virtual bases are initialized in the order in which they appear in depth-first left-to-right traversal of the base class declarations (left-to-right refers to the appearance in base-specifier lists)
+2) Then, direct bases are initialized in left-to-right order as they appear in this class's base-specifier list
+3) Then, non-static data member are initialized in order of declaration in the class definition.
+4) Finally, the body of the constructor is executed
+(Note: if initialization order was controlled by the appearance in the member initializer lists of different constructors, then the destructor wouldn't be able to ensure that the order of destruction is the reverse of the order of construction)
+
+## Parameter pack
+https://en.cppreference.com/w/cpp/language/parameter_pack
+
+A variadic class template can be instantiated with any number of template arguments:
+```
+template<class... Types> struct Tuple {};
+Tuple<> t0;           // Types contains no arguments
+Tuple<int> t1;        // Types contains one argument: int
+Tuple<int, float> t2; // Types contains two arguments: int and float
+Tuple<0> t3;          // error: 0 is not a type
+```
+A variadic function template can be called with any number of function arguments (the template arguments are deduced through template argument deduction):
+```
+template<class... Types> void f(Types... args);
+f();       // OK: args contains no arguments
+f(1);      // OK: args contains one argument: int
+f(2, 1.0); // OK: args contains two arguments: int and double
+```
+### Constructors and member initializer lists
+https://en.cppreference.com/w/cpp/language/constructor
+
 ### Destructors
 Destructors are special class functions that are called whenever an object goes out of scope. Just like a constructor, a destructor is called automatically. Destructors must have the same name as the class.. Destructors cannot:
 - return a value
@@ -790,43 +1340,6 @@ Pure Virtual Functions are a special case of virtual functions.
 
 A pure virtual function is used when the base class has a function that will be defined in its derived class, but it has no meaningful definition in the base class.
 
-## References
-https://www.educative.io/edpresso/differences-between-pointers-and-references-in-cpp
-References can be used ,simply, by name.
-
-    int a = 5;
-    int &ref = a;
-References allow modifying variable values passed to functions or to avoid passing an entire copy (value) of a large object to a function.
-
-    void cpp_ReferenceGood(int& r) {   // reference to an integer
-        r = 40;                       // modify the referenced object
-    }
-    void cpp_ReferencesBad(const int& r) {   // constant reference to   message
-        r = 20;                     // !!!compile error!!!
-    }
-
-    void cpp_References() {
-    int x = 10;
-    cpp_ReferenceGood(x);
-    cout << dec << x << endl;     // ensure cout not still in hex mode.
-                                    // Output is "40".
-    }
-Warning - only use references for: 1) passing data to functions (either to modify or as an efficient way to avoid passing value), or 2) As return types of operator overload functions. Never keep or hold a reference or return them from functions
-## Difference between reference and pointer
-A pointer in C++ is a variable that holds the memory address of another variable.
-
-A reference is an alias for an already existing variable. Once a reference is initialized to a variable, it cannot be changed to refer to another variable. Hence, a reference is similar to a const pointer.
-
-Note that the asterisk (*) used when declaring a pointer only means that it is a pointer (it is part of its type compound specifier), and should not be confused with the dereference operator seen a bit earlier, but which is also written with an asterisk (*). They are simply two different things represented with the same sign.
-
-### On References and Pointers
-References are typically used to be able to modify a value passed to a function. They can also be used to pass a reference to an object instead of copying it to functions. But:
-1. References can never be null which means they cannot be used for optional values
-2. References do not have ownership semantics, so objects cannot be deleted using references
-
-To have a class optionally (dynamically) contain an object of another class one must use a pointer. And pointers provide mechanisms for controlling the ownership of the dynamically created object.
-There are 3 kinds of pointers: unique_ptr<> allows one object to own another object, shared_ptr<> allows an object to be shared amongst other objects, and weak_ptr<> is used when no ownership is needed.
-Warning -Do not use legacy C-style raw pointers and deletealways use containment, unique_ptr, or shared_ptr
 ## Structures
 Note - struct is a class with all members being public by default
 
