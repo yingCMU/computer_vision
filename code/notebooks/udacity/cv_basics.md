@@ -1,3 +1,6 @@
+# Feature Vectors (Feature extraction techniques)
+Convolutional filters and ORB and HOG descriptors all rely on patterns of intensity to identify different shapes (like edges) and eventually whole objects (with feature vectors).
+
 ## ORB
 - oriented fast and
 - roated
@@ -20,3 +23,17 @@ creat feature vectors from keypoint: [youtube](https://www.youtube.com/watch?v=E
 ### Feature Matching
 https://www.youtube.com/watch?v=RH05Wnl1-2A
 - [limitation](https://www.youtube.com/watch?v=Vzs6B1dFQC0)
+
+## HOG (Histograms of Oriented Gradients )
+[youtube](https://www.youtube.com/watch?v=dqe9zGtxoNM)
+
+# CNN
+## CNN Layers
+[youtube](https://www.youtube.com/watch?v=LX-yVob3c28)
+## Pooling and global average pooling layers
+for recuding number of parameters used, and reducing dimension of each plane. Too many parameters can cause overfitting
+[youtube](https://www.youtube.com/watch?v=OkkIZNs7Cyc)
+![Tux, the Linux mascot](./images/vgg-16.png)
+## Dropout Layers
+https://pytorch.org/docs/stable/nn.html#dropout-layers
+Dropout layers essentially turn off certain nodes in a layer with some probability, p. This ensures that all nodes get an equal chance to try and classify different images during training, and it reduces the likelihood that only a few, heavily-weighted nodes will dominate the process.
