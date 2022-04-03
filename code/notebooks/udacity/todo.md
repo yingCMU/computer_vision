@@ -4,7 +4,7 @@ https://classroom.udacity.com/nanodegrees/nd891/parts/ab20cb33-12e4-4681-80b3-6c
 # Part 2:
 1. Review Fast RCNN, YOLO
 1. https://towardsdatascience.com/deep-learning-for-object-detection-a-comprehensive-review-73930816d8d9
-1. finish RNN and LSTM modules
+1. Lession3 RNN and L4. LSTM modules
 1. watch transformer talk: https://www.youtube.com/watch?v=rBCqOTEfxvg
 
 # All

@@ -267,3 +267,24 @@ Paper: Attention Is All You Need. It simplifies the encoder-decoder model by onl
 - [CNN+RNN network structure](https://www.youtube.com/watch?v=P-tHxD7kRmA)
 ![Tux, the Linux mascot](./images/caption_network.png)
 - [video captioning](https://www.youtube.com/watch?v=I_m9JyKTfbQ)
+
+### LSTM
+So, an LSTM looks at inputs sequentially. In PyTorch, there are two ways to do this.
+
+The first is pretty intuitive: for all the inputs in a sequence, which in this case would be a feature from an image, a start word, the next word, the next word, and so on (until the end of a sequence/batch), you loop through each input like so:
+```
+for i in inputs:
+    # Step through the sequence one element at a time.
+    # after each step, hidden contains the hidden state.
+    out, hidden = lstm(i.view(1, 1, -1), hidden)
+```
+The second approach, which this project uses, is to give the LSTM our entire sequence and have it produce a set of outputs and the last hidden state:
+```
+# the first value returned by LSTM is all of the hidden states throughout
+# the sequence. the second is just the most recent hidden state
+
+# Add the extra 2nd dimension
+inputs = torch.cat(inputs).view(len(inputs), 1, -1)
+hidden = (torch.randn(1, 1, 3), torch.randn(1, 1, 3))  # clean out hidden state
+out, hidden = lstm(inputs, hidden)
+```
