@@ -288,3 +288,106 @@ inputs = torch.cat(inputs).view(len(inputs), 1, -1)
 hidden = (torch.randn(1, 1, 3), torch.randn(1, 1, 3))  # clean out hidden state
 out, hidden = lstm(inputs, hidden)
 ```
+
+# SLAM
+## Kalman Filter
+Gaussians are exponential function characterized by a given mean, which defines the location of the peak of a Gaussian curve, ad a variance which defines the width/spread of the curve. All Gaussian are: symmetrical, they have one peak, which is also referred to as a "unimodal" distribution, and * they have an exponential drop off on either side of that peak
+
+When indicating how sure you are about a cars location,  you want to smallest uncertainty or spread, which means you want the Gaussian with the smallest variance.
+
+[how the resulting gaussian look combining two?](https://www.youtube.com/watch?v=mcwr6FcP2Vc), [here](https://www.youtube.com/watch?v=UUXETqShme4) is why
+
+[Gassian Motion](https://www.youtube.com/watch?v=LFPT0R3VaPs)
+![Tux, the Linux mascot](./images/update_example.png)
+
+
+## Why KF is better than sensor and prediciton only?
+1. Initial Prediction
+First, we start with an initial prediction of our car’s location and a probability distribution that describes our uncertainty about that prediction.
+
+Below is a 1D example, we know that our car is on this one lane road, but we don't know its exact location.
+![Tux, the Linux mascot](./images/kf1.png)
+
+
+A one lane one and an initial, uniform probability distribution.
+
+2. Measurement Update
+We then sense the world around the car. This is called the measurement update step, in which we gather more information about the car’s surroundings and refine our location prediction.
+
+Say, we measure that we are about two grid cells in front of the stop sign; our measurement isn't perfect, but we have a much better idea of our car's location.
+![Tux, the Linux mascot](./images/kf2.png)
+
+
+Measurement update step.
+
+3. Prediction (or Time Update)
+The next step is moving. Also called the time update or prediction step; we predict where the car will move, based on the knowledge we have about its velocity and current position. And we shift our probability distribution to reflect this movement.
+
+In the next example, we shift our probability distribution to reflect a one cell movement to the right.
+
+![Tux, the Linux mascot](./images/kf3.png)
+
+Prediction step.
+
+4. Repeat
+Then, finally, we’ve formed a new estimate for the position of the car! The Kalman Filter simply repeats the sense and move (measurement and prediction) steps to localize the car as it’s moving!
+
+![Tux, the Linux mascot](./images/kf_repeat.png)
+
+Kalman Filter steps.
+
+The Takeaway
+The beauty of Kalman filters is that they combine somewhat inaccurate sensor measurements with somewhat inaccurate predictions of motion to get a filtered location estimate that is better than any estimates that come from only sensor readings or only knowledge about movement.
+
+## motion model
+a car's state is [position, velocity], in order to predict hwere a car will be at a future point in time, we rely on a motion model. no motion model is perfect; it’s a challenge to account for outside factors like wind or elevation, or even things like tire slippage, and so on.
+```
+# The predict_state function should take in a state
+# and a change in time, dt (ex. 3 for 3 seconds)
+# and it should output a new, predicted state
+# based on a constant motion model
+# This function also assumes that all units are in m, m/s, s, etc.
+
+def predict_state(state, dt):
+    # Assume that state takes the form [x, vel] i.e. [0, 50]
+
+    ## TODO: Calculate the new position, predicted_x
+    ## TODO: Calculate the new velocity, predicted_vel
+    ## These should be calculated based on the contant motion model:
+    ## distance = x + velocity*time
+
+    predicted_x = state[0]+state[1]*dt
+    predicted_vel = state[1]
+
+    # Constructs the predicted state and returns it
+    predicted_state = [predicted_x, predicted_vel]
+    return predicted_state
+```
+### More Complex Motion
+A car starts at the same point, at the 0m mark, and it’s moving 50m/s forward, but it’s also slowing down at a rate of 20m/s^2. This means it’s acceleration = -20m/s^2.
+Where do you think the car will be after three seconds have elapsed? And what will it's velocity be? After less than a second, the car will slow down, so it won't even move 50m in the first second. It slows down at every moment! after 3 seconds this car will have traveled 60m from it's initial position at 0m! This may seem counterintuitive, but , assuming that the acceleration stays the same, after three seconds, it's velocity will have slowed so far down that it will be moving backwards! -10m/s!
+position: Integral of (v-at)dt and velocity is v-at
+- Area Under the Line: displacement can also be thought of as the area under the line and within the given time interval.
+- Displacement can be calculated by finding the area under the line in between t1 and t2, similar to our constant velocity equation but a slightly different shape. This area can be calculated by breaking this area into two distinct shapes; a simple rectangle, A1, and a triangle, A2.
+    - A1 = initial_velocity*dt
+    - A2 = 0.5*acceleration*dt**2 , the height is the change in velocity over that time! From our earlier equation for velocity, we know that this value, dv, is equal to: acceleration*(t2-t1) or acceleration*dt
+![Tux, the Linux mascot](./images/area.png)
+```
+# Constant acceleration, changing velocity
+
+# initial variables
+x = 0
+velocity = 50
+acc = -20
+
+initial_state = [x, velocity, acc]
+
+# predicted state after three seconds have elapsed
+# this state has a new value for x, and a new value for velocity (but the acceleration stays the same)
+dt = 3
+
+new_x = x + velocity*dt + 0.5*acc*dt**2
+new_vel = velocity + acc*dt
+
+predicted_state = [new_x, new_vel, acc]  # predicted_state = [60, -10, -20]
+```
