@@ -391,3 +391,114 @@ new_vel = velocity + acc*dt
 
 predicted_state = [new_x, new_vel, acc]  # predicted_state = [60, -10, -20]
 ```
+
+### Motion function as state transformation matrix
+- assuming Constant velocity, State Vector representaiton [vidoe](https://www.youtube.com/watch?v=DRRuQMYo800) :A state vector is a column of values whose dimensions are 1 in width and M in height. This vector should contain all the values that we are interested in, and for predicting 1D movement, we are interested in the position, x, and the velocity, v.
+![Tux, the Linux mascot](./images/matrix_tran.png)
+![Tux, the Linux mascot](./images/matrix_2d.png)
+
+This kind of multiplication can be really useful, if x and y are not dependent on one another. That is, there is a separate and constant x-velocity and y-velocity component. For real-world, curved and continuous motion, we still use a state vector that is one column, so that we can handle any x-y dependencies. So, you'll often see state vector and transformation matrices that look like the following.
+These extra spaces in the matrix allow for more detailed motion models and can account for a x and y dependence on one another (just think of the case of circular motion). So, state vectors are always column vectors.
+![Tux, the Linux mascot](./images/matrix_2d_4.png)
+
+- python function overloading: The double underscore __X__, see the [list of these](https://docs.python.org/3/reference/datamodel.html#special-method-names)
+```
+__init__
+
+__repr__
+```
+These are special functions that are used by Python in a specific way.
+We typically don't call these functions directly.
+Instead, Python calls them automatically based on our use of keywords and operators.
+
+For example, __init__ is called when we create a new object and __repr__ is called when we tell Python to print the string representation of a specific object!
+- operator overloading.
+__add__: we can define what happens when we add two car objects together using a + symbol by defining the __add__ function.
+```
+def __add__(self, other):
+    # Create an empty list
+    added_state = []
+
+    # Add the states together, element-wise
+    for i in range(self.state):
+        added_value = self.state[i] + other.state[i]
+        added_state.append(added_value)
+
+    return added_state
+```
+## Matrics and Transformation of State
+- [Kalman Filter Land](https://www.youtube.com/watch?v=6xupqulu0bc)
+- horizontal is position, vertical is velocity. https://www.youtube.com/watch?v=5QYGm4D9z6Y
+- how to use gaussian in KF: https://www.youtube.com/watch?v=5QYGm4D9z6Y
+![Tux, the Linux mascot](./images/kf_notation.png)
+- [Kalman Filter Design](https://www.youtube.com/watch?v=7C_tsAr8PNM)
+![Tux, the Linux mascot](./images/kf_formula.png)
+- [simplify KF notations](https://www.youtube.com/watch?v=UpC0D-SEtD0): x′=Fx+Bu, This equation is the move function that updates your beliefs in between sensor measurements. Fx models motion based on velocity, acceleration, angular velocity, etc of the object you are tracking.
+
+B is called the control matrix and u is the control vector. Bu measures extra forces on the object you are tracking. An example would be if a robot was receiving direct commands to move in a specific direction, and you knew what those commands were and when they occurred. Like if you told your robot to move backwards 10 feet, you could model this with the Bu term.
+
+When you take the self-driving car engineer nanodegree, you'll use Kalman filters to track objects that are moving around your vehicle like other cars, pedestrians, bicyclists, etc. In those cases, you would ignore BuBu because you do not have control over the movement of other objects. The Kalman filter equation becomes x' = Fx
+![Tux, the Linux mascot](./images/simplify.png)
+![Tux, the Linux mascot](./images/matrix_notation.png)
+### State Vector
+an even more complex model could include information about the turning angle of the vehicle and the turning rate:
+```
+state = [distance_x, distance_y, velocity_x, velocity_y, angle, angle_rate]
+```
+
+
+The regular x would usually represent distance along the x-axis; on the other hand, the bold $\hat{x}$ indicates a vector.
+![Tux, the Linux mascot](./images/matrix_formula.png)
+The capitalized, bold $F$ tells you that this variable is a matrix.
+### Kalman Equation Reference
+![Tux, the Linux mascot](./images/reference.png)
+The meaning of Vectors here:
+In a physics class, you might have one vector for position and then a separate vector for velocity. But in computer programming, a vector is really just a list of values.
+
+When using the Kalman filter equations, the bold, lower-case variable \mathbf{x}x represents a vector in the computer programming sense of the word. The \mathbf{x}x vector holds the values that represent your motion model such as position and velocity.
+[python list](https://docs.python.org/3/tutorial/datastructures.html)
+```
+# vectors in python,
+myvector = [5, 9, 10, 2, 20]
+```
+A vector can be thought of as a simple list of values. Whether the list is vertical or horizontal does not make a difference.
+
+## Transpose
+You can think of the tranpose as switching rows and columns. The matrix rows become the columns or alternatively you can consider the columns become the rows. Mathematically, you are switching around the i and j values for every element in the matrix. For example, the element in the 3rd row, 4th column is 11. For the transpose of the matrix, 11 is now in the 4th row, 3rd column. The formal mathematical definition of the transpose of a matrix is: [A_T](i,j) =[A](j,i)
+- Motivation for Calculating the Transpose - when carrying out matrix multiplication
+
+You needed matrix columns in order to find the dot product of a row from matrix \mathbf{A}A and a column from matrix \mathbf{B}B.
+## Identity Matrix is like the Number One
+**AI**=**IA**=**A**
+![Tux, the Linux mascot](./images/ai.png)
+![Tux, the Linux mascot](./images/ia.png)
+
+## Matrix Inverse
+The superscript ^{-1} represents the inverse of a matrix
+if matrix \mathbf{A}A has an inverse, then
+A x A^-1 = A^-1 x A = I. Only square matrices, or in other words matrices with the same number of columns as rows, have inverses. You can see that this must be true based on the definition of the inverse and the identity matrix. The identity matrix is always a square matrix.
+So in order for a matrix to have an inverse, the matrix must be square. At the same time, not all square matrices have inverses.
+
+For matrices with more dimensions, the calculations become more [complicated](https://en.wikipedia.org/wiki/Invertible_matrix). Both Python and C++ have libraries that can calculate the inverse of a matrix such as the NumPy Library and the [Eigen Library](http://eigen.tuxfamily.org/index.php?title=Main_Page)
+![Tux, the Linux mascot](./images/inverse.png)
+
+# [SLAM](https://www.youtube.com/watch?v=UVkkDPJshgM)
+(Simultaneous Localization and Mapping) for a 2 dimensional world! You’ll combine what you know about robot sensor measurements and movement to create locate a robot and create a map of an environment from only sensor and motion data gathered by a robot, over time. SLAM gives you a way to track the location of a robot in the world in real-time and identify the locations of landmarks such as buildings, trees, rocks, and other world features.
+- [Graph SLAM](https://www.youtube.com/watch?v=OGBC9HrVqd4)
+- 1 initial location constraint
+- 5 additional, relative motion constraints, and finally,
+- 8 relative measurement constraints for the 8 landmark locations <br>
+Adding all of these up gives us a total of 14 constraints.
+
+Now, consider the example in video above, with 4 poses (including the initial location x0) and one landmark. We can use this same math and say that there are 5 total constraints for the given image
+
+## [Constraint Matrices](https://www.youtube.com/watch?v=2V3ZF08TcX8)
+how to implement relationships between robot poses and landmark locations?
+[answer](https://www.youtube.com/watch?v=uLmGavXEN64) is <br>
+2 -1  9
+-1 1  -4
+
+- [adding landmark constraint](https://www.youtube.com/watch?v=_JUCLtoh1CE)
+    - [answer](https://www.youtube.com/watch?v=vDfQNdUSclA) is 0,9
+- [adding initial values](https://www.youtube.com/watch?v=e3zpWlM9IRg): [answer](https://www.youtube.com/watch?v=ntK0oz35VPQ)
+- [another example](https://www.youtube.com/watch?v=cKFEdCwBGqo)
