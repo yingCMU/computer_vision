@@ -110,7 +110,66 @@ namespace N
     int k = 3;
 }
 ```
+## Understand function declarations
+Because you have defined your function in a separate file outside of main.cpp, you can more easily re-use the function in other parts of your code.
 
+Notice that you still had to declare the distance function at the top of main.cpp to be able to use the function.
+
+```
+#include <iostream>
+
+float distance(float velocity, float acceleration, float time_elapsed);
+
+int main() {
+
+    std::cout << distance(3, 4, 5) << std::endl;
+    std::cout << distance(7.0, 2.1, 5.4) << std::endl;
+
+    return 0;
+}
+```
+-- distance.cpp--
+```
+float distance(float velocity, float acceleration, float time_elapsed) {
+    return velocity*time_elapsed + 0.5*acceleration*time_elapsed*time_elapsed;
+}
+```
+### Header Files
+The function declaration `float distance(float velocity, float acceleration, float time_elapsed);`
+is oftentimes put into its own file as well. The declaration is kept in what's called a header file because the header is the information above the main() function. Header files generally have either a .h or .hpp extension. Here is the same code above but with the function declaration in a header file.
+```
+#include <iostream>
+#include "distance.h"
+
+int main() {
+
+    std::cout << distance(3, 4, 5) << std::endl;
+    std::cout << distance(7.0, 2.1, 5.4) << std::endl;
+
+    return 0;
+}
+```
+`#include "distance.h"`
+will paste the contents of distance.h into main.cpp.
+
+To compile the code, you only need to compile the .cpp files but not the .h file: `g++ main.cpp distance.cpp`
+### File Naming
+Naming conventions dictate that the header file and associated cpp file have the same name.
+### Include syntax
+You might be wondering why there are two different types of include statements:
+```
+#include <iostream>
+#include "distance.h"
+```
+The include statement with quotes tells the program to look for the distance.h file in the current directory.
+The <> syntax will depend on your C++ environment. Generally, environments are set up to look for the file where the C++ libraries are stored like the Standard Library.
+## Python vs C++ speed
+In this example, we'll be comparing the execution speed of C++ and Python implementations of the move function that Kalman filters use to update their estimate of a car's location as it moves.
+
+The move function does two things:
+
+It shifts a set of prior beliefs (about the car's location) in whichever direction the car moves.
+It adds some uncertainty to the beliefs because our model for car movement is not perfect.
 
 ## Enum
     enum type_name {
@@ -1400,6 +1459,43 @@ NAMESPACE IMPLICIT USAGE
         using namespace People;
         Friend ww{"wonder woman"};
     }
+### namespace using declaration
+A using declaration lets us use a name from a namespace without qualifying the name with a namespace_name:: prefix. A using declaration has the form
+
+using namespace::name;
+
+Once the using declaration has been made, we can access name directly:
+```
+#include <iostream>
+// using declaration; when we use the name cin, we get the one from the namespace std
+using std::cin;
+int main()
+{
+    int i;
+    cin >> i;       // ok: cin is a synonym for std::cin
+    cout << i;      // error: no using declaration; we must use the full name
+    std::cout << i; // ok: explicitly use cout from namepsace std
+    return 0;
+}
+```
+A Separate using Declaration Is Required for Each Name
+```
+#include <iostream>
+// using declarations for names from the standard library
+using std::cin;
+using std::cout; using std::endl;
+int main()
+{
+    cout << "Enter two numbers:" << endl;
+    int v1, v2;
+    cin >> v1 >> v2;
+    cout << "The sum of " << v1 << " and " << v2
+         << " is " << v1 + v2 << endl;
+    return 0;
+}
+```
+Headers Should Not Include using Declarations. The reason is that the contents of a header are copied into the including program’s text. If a header has a using declaration, then every program that includes that header gets that same using declaration. As a result, a program that didn’t intend to use the specified library name might encounter unexpected name conflicts.
+
 ## Array
 compilers need to know what variable type and how many elements are required for an array at compile time. The information is necessary to allocate memory for the array.
 
@@ -1411,7 +1507,3 @@ https://en.cppreference.com/w/cpp/language/operator_incdec
 
 ## Interviews
 https://www.toptal.com/c-plus-plus/interview-questions#iquestion_form
-
-## C++ @fb
-https://www.internalfb.com/intern/wiki/Users/xingao/Coding/Learning_Hack_0/
-https://www.internalfb.com/intern/wiki/Bootcamp:_Introduction_to_Buck/
