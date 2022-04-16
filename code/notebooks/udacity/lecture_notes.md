@@ -502,3 +502,21 @@ how to implement relationships between robot poses and landmark locations?
     - [answer](https://www.youtube.com/watch?v=vDfQNdUSclA) is 0,9
 - [adding initial values](https://www.youtube.com/watch?v=e3zpWlM9IRg): [answer](https://www.youtube.com/watch?v=ntK0oz35VPQ)
 - [another example](https://www.youtube.com/watch?v=cKFEdCwBGqo)
+
+
+Given only the above constraints between poses (x0, x1, x2) and the landmark position. Where do you think the landmark is?
+![Tux, the Linux mascot](./images/landmark.png)
+
+The landmark, L, is at the value 7.
+
+Think about the relationship between x0 and L. x0 is at -3 and sees L a distance of 10 away: L = -3 + 10.
+
+And if we keep adding poses and sensor measurements this remains consistent. As x0 moves to x1, we get L = -3 + 5 + 5
+
+And the final loop all the way to x2: L = -3 + 5 + 3 + 2
+
+
+- [Introducing Noise](https://www.youtube.com/watch?v=E_OI5DinFA0): [answer](https://www.youtube.com/watch?v=X5kh82oke5w)
+- [confidence measurment](https://www.youtube.com/watch?v=WRANOBm89I4)
+
+- [summary](https://www.youtube.com/watch?v=Ptx33qEaUQQ)
