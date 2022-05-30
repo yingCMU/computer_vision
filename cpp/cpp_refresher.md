@@ -490,7 +490,7 @@ When to use What?
 The performances are exactly the same, as references are implemented internally as pointers. But still you can keep some points in your mind to decide when to use what :
 - Use references : In function parameters and return types.
 - Use pointers:
-    - Use pointers if pointer arithmetic or passing NULL-pointer is needed. For example for arrays (Note that array access is implemented using pointer arithmetic).
+    - Use pointers if pointer arithmetic or **passing NULL-pointer is needed**. For example for arrays (Note that array access is implemented using pointer arithmetic).
     - To implement data structures like linked list, tree, etc and their algorithms because to point different cell, we have to use the concept of pointers.
 ## Passing By Pointer Vs Passing By Reference in C++
 1) Passing by Pointer: Here, the memory location of the variables is passed to the parameters in the function, and then the operations are performed.
@@ -1399,6 +1399,57 @@ Pure Virtual Functions are a special case of virtual functions.
 
 A pure virtual function is used when the base class has a function that will be defined in its derived class, but it has no meaningful definition in the base class.
 
+
+```
+
+#include<iostream>
+using namespace std;
+
+class base {
+public:
+    virtual void print()
+    {
+        cout << "print base class\n";
+    }
+
+    void show()
+    {
+        cout << "show base class\n";
+    }
+};
+
+class derived : public base {
+public:
+    void print()
+    {
+        cout << "print derived class\n";
+    }
+
+    void show()
+    {
+        cout << "show derived class\n";
+    }
+};
+
+int main()
+{
+    base *bptr;
+    derived d;
+    bptr = &d;
+
+    // Virtual function, binded at runtime
+    bptr->print();
+
+    // Non-virtual function, binded at compile time
+    bptr->show();
+
+    return 0;
+}
+```
+Runtime polymorphism is achieved only through a pointer (or reference) of base class type. Also, a base class pointer can point to the objects of base class as well as to the objects of derived class. In above code, base class pointer ‘bptr’ contains the address of object ‘d’ of derived class.
+Late binding (Runtime) is done in accordance with the content of pointer (i.e. location pointed to by pointer) and Early binding (Compile time) is done according to the type of pointer, since print() function is declared with virtual keyword so it will be bound at runtime (output is print derived class as pointer is pointing to object of derived class) and show() is non-virtual so it will be bound during compile time (output is show base class as pointer is of base type).
+NOTE: If we have created a virtual function in the base class and it is being overridden in the derived class then we don’t need virtual keyword in the derived class, functions are automatically considered as virtual functions in the derived class.
+
 ## Structures
 Note - struct is a class with all members being public by default
 
@@ -1496,6 +1547,156 @@ int main()
 ```
 Headers Should Not Include using Declarations. The reason is that the contents of a header are copied into the including program’s text. If a header has a using declaration, then every program that includes that header gets that same using declaration. As a result, a program that didn’t intend to use the specified library name might encounter unexpected name conflicts.
 
+## Deducing Types
+auto and one for decltype:  The increasingly widespread application of type deduction frees you from the tyranny of spelling out types that are obvious or redundant. It makes C++ software more adaptable, because changing a type at one point in the source code automatically propagates through type deduction to other locations. However, it can render code more difficult to reason about, because the types deduced by compilers may not be as apparent as you’d like.
+```
+template<typename T>
+void f(ParamType param);
+
+f(expr);                // deduce T and ParamType from expr
+
+```
+
+## dynamic allocation (using new)
+https://stackoverflow.com/questions/22146094/why-should-i-use-a-pointer-rather-than-the-object-itself
+
+two ways of creating an object. The main difference is the storage duration of the object. When doing Object myObject; within a block, the object is created with automatic storage duration, which means it will be destroyed automatically when it goes out of scope. When you do new Object(), the object has dynamic storage duration, which means it stays alive until you explicitly delete it. You should only use dynamic storage duration when you need it. That is, you should always prefer creating objects with automatic storage duration when you can.
+The main two situations in which you might require dynamic allocation:
+
+You need the object to outlive the current scope - that specific object at that specific memory location, not a copy of it. If you're okay with copying/moving the object (most of the time you should be), you should prefer an automatic object.
+You need to allocate a lot of memory, which may easily fill up the stack. It would be nice if we didn't have to concern ourselves with this (most of the time you shouldn't have to), as it's really outside the purview of C++, but unfortunately, we have to deal with the reality of the systems we're developing for.
+
+Benefits of dynamic allocation
+1. You don't have to know the size of the array in advance
+
+One of the first problems many C++ programmers run into is that when they are accepting arbitrary input from users, you can only allocate a fixed size for a stack variable. You cannot change the size of arrays either. For example:
+```
+
+char buffer[100];
+std::cin >> buffer;
+// bad input = buffer overflow
+```
+Of course, if you used an std::string instead, std::string internally resizes itself so that shouldn't be a problem. But essentially the solution to this problem is dynamic allocation. You can allocate dynamic memory based on the input of the user, for example:
+```
+int * pointer;
+std::cout << "How many items do you need?";
+std::cin >> n;
+pointer = new int[n];
+```
+Because the heap is much bigger than the stack, one can arbitrarily allocate/reallocate as much memory as he/she needs, whereas the stack has a limitation.
+## Pointers usages
+always prefer the alternatives unless you really need pointers.
+
+1. You need reference semantics. Sometimes you want to pass an object using a pointer (regardless of how it was allocated) because you want the function to which you're passing it to have access that that specific object (not a copy of it). However, in most situations, you should prefer reference types to pointers, because this is specifically what they're designed for. Note this is not necessarily about extending the lifetime of the object beyond the current scope, as in situation 1 above. As before, if you're okay with passing a copy of the object, you don't need reference semantics.
+
+2. You need polymorphism. You can only call functions polymorphically (that is, according to the dynamic type of an object) through a pointer or reference to the object. If that's the behavior you need, then you need to use pointers or references. Again, references should be preferred.
+
+3. You want to represent that an object is optional by allowing a nullptr to be passed when the object is being omitted. If it's an argument, you should prefer to use default arguments or function overloads. Otherwise, you should preferably use a type that encapsulates this behavior, such as std::optional (introduced in C++17 - with earlier C++ standards, use boost::optional).
+
+4. You want to decouple compilation units to improve compilation time. The useful property of a pointer is that you only require a forward declaration of the pointed-to type (to actually use the object, you'll need a definition). This allows you to decouple parts of your compilation process, which may significantly improve compilation time. See the Pimpl idiom.
+
+5. You need to interface with a C library or a C-style library. At this point, you're forced to use raw pointers. The best thing you can do is make sure you only let your raw pointers loose at the last possible moment. You can get a raw pointer from a smart pointer, for example, by using its get member function. If a library performs some allocation for you which it expects you to deallocate via a handle, you can often wrap the handle up in a smart pointer with a custom deleter that will deallocate the object appropriately.
+
+### Uninitialized Pointers
+Uninitialized pointers is pointing to “aynwhere” which is of course an invalid memory location. It contains garbage data. This pointer may lead a program to behave wrongly or to crash.
+```
+int * Ptr;  //The pointer Ptr was declared without initialization
+*Ptr = 17;
+cout << *Ptr << endl;
+```
+### Null Pointers
+We can initialize a pointer to 0 or NULL, which is pointing to nothing. Null pointer points to empty location in memory.
+```
+int * Ptr = 0;  // Initialize the pointer to point to nothing
+int * ptr= NULL; // Also declare a NULL pointer points to nothing
+```
+C++11 introduces a new keyword called nullptr to represent null pointer.
+int * p{nullptr}; // Also declare a nullptr pointer points to nothing
+Initialize a pointer to null during declaration is a good software engineering practice.
+
+### Why Use Pointers
+Pointers can be used to pass of arrays and strings to functions more efficiently.
+Pointers save the memory.
+Pointers reduce the length and complexity of a program.
+Pointers make possible to return more than one value from the function.
+Pointers increase the processing speed. In other words, Execution time with pointers is faster because data are manipulated with the address, that is, direct access to memory location.
+Memory is accessed efficiently with the pointers. The pointer assigns and releases the memory as well. Hence we can allocate memory dynamically on the heap or free store.
+It can access specific address in memory.
+It is useful in embedded and systems applications.
+Pointer is used with data structures, which is useful for representing two-dimensional and multi-dimensional arrays.
+Pointers are used for file handling.
+Pointer declared to a base class could access the object of a derived class. However, a pointer to a derived class cannot access the object of a base class.
+18
+
+### Compare with Java - [source](https://hownot2code.com/2017/08/10/c-pointers-why-we-need-them-when-we-use-them-how-they-differ-from-accessing-to-object-itself/)
+that pointers in Java are not used explicitly, e.g. a programmer cannot access to object in code through a pointer to it. However, in Java all types, except base, are referenced: accessing to them goes by the link, although you cannot explicitly pass the parameter by link. Besides that, new in C++ and Java or C# are different things.
+
+In order to give a slight idea about the pointers in C++ , we’ll give two similar code fragments:
+
+Java:
+```
+Object object1 = new Object();
+//A new object is allocated by Java
+Object object2 = new Object();
+//Another new object is allocated by Java
+
+object1 = object2;
+//object1 now points to the object originally allocated for object2
+//The object originally allocated for object1 is now "dead" –
+//nothing points to it, so it
+//will be reclaimed by the Garbage Collector.
+//If either object1 or object2 is changed,
+//the change will be reflected to the other
+The closest equivalent to this, is:
+```
+
+C++:
+```
+Object * object1 = new Object();
+//A new object is allocated on the heap
+Object * object2 = new Object();
+//Another new object is allocated on the heap
+delete object1;
+//Since C++ does not have a garbage collector,
+//if we don't do that, the next line would
+//cause a "memory leak", i.e. a piece of claimed memory that
+//the app cannot use
+//and that we have no way to reclaim...
+
+object1 = object2;
+//Same as Java, object1 points to object2.
+```
+
+Let’s see the alternative C++ way:
+```
+Object object1;
+//A new object is allocated on the STACK
+Object object2;
+//Another new object is allocated on the STACK
+object1 = object2;
+//!!!! This is different!
+//The CONTENTS of object2 are COPIED onto object1,
+//using the "copy assignment operator", the definition of operator =.
+//But, the two objects are still different.
+//Change one, the other remains unchanged.
+//Also, the objects get automatically destroyed
+//once the function returns...
+```
+Pointers are usually used for the access to heap while the objects are located in stack – this is a simpler and quicker structure. First: when do we use dynamic memory allocation? Second: when is it better to use pointers?
+## Stack and Heap
+https://hownot2code.com/2017/08/09/programming-concepts-the-stack-and-the-heap/
+- The stack is a region of RAM that gets created on every thread that your application is running on. It works in a LIFO (Last In, First Out) manner. Every time a function declares a new variable, it is “pushed” onto the stack, and after that variable falls out of scope (such as when the function closes), that variable will be deallocated from the stack automatically. Once a stack variable is freed, that region of memory becomes available for other stack variables.
+
+Due to the pushing and popping nature of the stack, memory management is very logical and is able to be handled completely by the CPU; this makes it very quick, especially since each byte in the stack tends to be reused very frequently which means it tends to be mapped to the processor’s cache. However, there are some cons to this form of strict management. The size of the stack is a fixed value, and allocating more onto the stack than it can hold will result in a stack overflow. The size of the stack is **decided when the thread is created**, and each variable has a maximum size that it can occupy based on its data type; this prevents certain variables such as integers from ever growing beyond a certain value, and forces more complex data types such as arrays to specify their size prior to runtime since the stack won’t let them be resized. Variables allocated on the stack also are always local in nature because they are always next in line to be popped (unless more variables are pushed prior to the popping of earlier variables).
+
+Overall, the stack really exceeds in managing memory in the most efficient way possible – but what if you need data structures that can be dynamic, such as a dynamically sized array, or what if you need global variables? This is where the heap comes into play.
+
+- the heap is a memory store also in RAM that allows for dynamic memory allocation, and does not work on a stack-like basis, it’s more just a hub of storage for you to define your variables. Once you allocate a memory location on the heap to store a variable, that variable can be accessed at any point in time not only throughout just the thread, but throughout the application’s entire life. This is how you can define global variables. Once an application ends, all of the allocated memory locations are reclaimed by the CPU. The heap size is set on application startup, but unlike the stack there are no size restrictions on the heap (aside from the physical limitations of your machine), which means it can get ever larger as you allocate more memory to it. This is what allows you to create variables that can be dynamically resized, since the heap itself is dynamic in size.
+
+**You interact with the heap via references typically called pointers**, which are variables whose values are the address of another variable, such as a memory location. By creating a pointer, you ‘point’ at a memory location on the heap, which is what signifies the initial location of your variable and tells the program where to access the value. Due to the dynamic nature of the heap, it is completely unmanaged by the CPU aside from initial allocation and heap resizing; in non-garbage collected languages such as C and C++, this requires you as the developer to manage memory and to manually free memory locations when they are no longer needed. Failing to do so can create memory leaks and cause memory to become fragmented, which will cause reads from the heap to take longer and makes it difficult to continuously allocate more memory onto the heap. <br>
+Compared to the stack, the heap is slower to access because variables are scattered across memory instead of always sitting at the top of the stack. Improper memory management of the heap can also slow down reading from the heap; however, this shouldn’t detract from its importance – you absolutely need it to create any type of variable dynamically, or a global variable. <br>
+Different languages use the stack and the heap differently; C and C++ allocate to the stack automatically, and you as the developer manually have to allocate and deallocate from the heap, where more modern languages such as Go and Java allocate to both the stack and the heap automatically, and have a garbage collector that handles heap deallocation on its own. There are even languages like Ruby and Python where everything is allocated on the heap and don’t use a stack at all.
+## [The rule of three/five/zero](https://en.cppreference.com/w/cpp/language/rule_of_three)
 ## Array
 compilers need to know what variable type and how many elements are required for an array at compile time. The information is necessary to allocate memory for the array.
 
@@ -1507,3 +1708,337 @@ https://en.cppreference.com/w/cpp/language/operator_incdec
 
 ## Interviews
 https://www.toptal.com/c-plus-plus/interview-questions#iquestion_form
+
+
+## It is a copy unless pass by reference or pointer
+```
+#include <iostream>
+#include <vector>
+void test(std::vector<int>& v ) {
+    // Add two more integers to vector
+    v.push_back(25);
+    v.push_back(13);
+    std::cout << "inside test() :";
+    for (int n : v) {
+        std::cout << n << ",";
+    }
+    std::cout << "\n";
+}
+
+int main()
+{
+    // Create a vector containing integers
+    std::vector<int> v = { 7, 5, 16, 8 };
+
+    test(v);
+
+    // Print out the vector
+    std::cout << "v = { ";
+    for (int n : v) {
+        std::cout << n << ", ";
+    }
+    std::cout << "}; \n";
+}
+```
+output:
+```
+inside test() :7,5,16,8,25,13,
+v = { 7, 5, 16, 8, 25, 13, };
+```
+if not using reference for test()'s paremeter result is
+```
+inside test() :7,5,16,8,25,13,
+v = { 7, 5, 16, 8, };
+```
+alternative way of using pointer:
+```
+#include <iostream>
+#include <vector>
+void test(std::vector<int> * v ) {
+    // Add two more integers to vector
+    v->push_back(25);
+    v->push_back(13);
+
+    std::cout << "inside test() :";
+    for (int n : *v) {
+        std::cout << n << ",";
+    }
+    std::cout << "\n";
+}
+
+int main()
+{
+    // Create a vector containing integers
+    std::vector<int> v = { 7, 5, 16, 8 };
+
+    test(&v);
+
+    // Print out the vector
+    std::cout << "v = { ";
+    for (int n : v) {
+        std::cout << n << ", ";
+    }
+    std::cout << "}; \n";
+}
+```
+## braces and parenthis
+```
+std::vector<int> v = { 7, 5, 16, 8 };  => v = { 7, 5, 16, 8};
+std::vector<int> v{ 7, 5, 16, 8 };  => v = { 7, 5, 16, 8};
+std::vector<int> v( 7, 5, 16, 8 );  // error: no matching function for call to 'std::vector<int>::vector(int, int, int, int)'
+std::vector<int> v( 2); => {0,0}
+vector<int> vect(3, 10); // Create a vector of size 3 with all values as 10.
+int arr[] = { 10, 20, 30 }; int n = sizeof(arr) / sizeof(arr[0]); vector<int> vect(arr, arr + n);  //Initializing from an array
+vector<int> vect1{ 10, 20, 30 }; vector<int> vect2(vect1.begin(), vect1.end());  // initialize from another vector
+vector<int> vect1(10);int value = 5;fill(vect1.begin(), vect1.end(), value);  // initilize all to a value
+```
+## When to use pointer vs reference?
+https://stackoverflow.com/questions/7058339/when-to-use-references-vs-pointers
+
+Use reference wherever you can, pointers wherever you must.
+void pointers until you can't.
+
+The reason is that pointers make things harder to follow/read, less safe and far more dangerous manipulations than any other constructs.
+
+So the rule of thumb is to use pointers only if there is no other choice.
+
+For example, returning a pointer to an object is a valid option when the function can return nullptr in some cases and it is assumed it will. That said, a better option would be to use something similar to std::optional (requires C++17; before that, there's boost::optional).
+
+Another example is to use pointers to raw memory for specific memory manipulations. That should be hidden and localized in very narrow parts of the code, to help limit the dangerous parts of the whole code base.
+
+In your example, there is no point in using a pointer as argument because:
+
+if you provide nullptr as the argument, you're going in undefined-behaviour-land;
+the reference attribute version doesn't allow (without easy to spot tricks) the problem with 1.
+the reference attribute version is simpler to understand for the user: you have to provide a valid object, not something that could be null.
+If the behaviour of the function would have to work with or without a given object, then using a pointer as attribute suggests that you can pass nullptr as the argument and it is fine for the function. That's kind of a contract between the user and the implementation.
+The performances are exactly the same, as references are implemented internally as pointers.
+## shared_ptr snippet
+```
+#include <iostream>
+#include <memory>
+#include <thread>
+#include <chrono>
+#include <mutex>
+
+struct Base
+{
+    Base() { std::cout << "  Base::Base()\n"; }
+    // Note: non-virtual destructor is OK here
+    ~Base() { std::cout << "  Base::~Base()\n"; }
+};
+
+struct Derived: public Base
+{
+    Derived() { std::cout << "  Derived::Derived()\n"; }
+    ~Derived() { std::cout << "  Derived::~Derived()\n"; }
+};
+
+void thr(std::shared_ptr<Base> p)
+{
+    std::cout  << "before sleep, p.use_count() = " << p.use_count() << '\n';
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::shared_ptr<Base> lp = p; // thread-safe, even though the
+                                  // shared use_count is incremented
+    {
+        static std::mutex io_mutex;
+        std::lock_guard<std::mutex> lk(io_mutex);
+        std::cout  << "in mutex, lp.use_count() = " << lp.use_count() << '\n';
+    }
+}
+
+int main()
+{
+    std::shared_ptr<Base> p = std::make_shared<Derived>();
+
+    std::cout  << "before t1, p.use_count() = " << p.use_count() << '\n';
+    std::thread t1(thr, p);//, t2(thr, p), t3(thr, p);
+    std::cout  << "after t1, p.use_count() = " << p.use_count() << '\n';
+    p.reset(); // release ownership from main
+    std::cout << "after reset(), p.use_count() = " << p.use_count() << '\n';
+    t1.join(); //t2.join(); t3.join();
+    std::cout << "All threads completed, the last one deleted Derived\n";
+}
+```
+possible output: my guess is thread t1 is still holding 1 pointer even after main reset()
+```
+Base::Base()
+  Derived::Derived()
+before t1, p.use_count() = 1
+after t1, p.use_count() = 2
+after reset(), p.use_count() = 0
+before sleep, p.use_count() = 1
+in mutex, lp.use_count() = 2
+  Derived::~Derived()
+  Base::~Base()
+All threads completed, the last one deleted Derived
+```
+if it is single thread?
+```
+#include <iostream>
+#include <memory>
+#include <thread>
+#include <chrono>
+#include <mutex>
+
+struct Base
+{
+    Base() { std::cout << "  Base::Base()\n"; }
+    // Note: non-virtual destructor is OK here
+    ~Base() { std::cout << "  Base::~Base()\n"; }
+};
+
+struct Derived: public Base
+{
+    Derived() { std::cout << "  Derived::Derived()\n"; }
+    ~Derived() { std::cout << "  Derived::~Derived()\n"; }
+};
+
+void thr(std::shared_ptr<Base> p)
+{
+    std::cout  << "before sleep, p.use_count() = " << p.use_count() << '\n';
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::shared_ptr<Base> lp = p; // thread-safe, even though the
+                                  // shared use_count is incremented
+    {
+        static std::mutex io_mutex;
+        std::lock_guard<std::mutex> lk(io_mutex);
+        std::cout  << "in mutex, lp.use_count() = " << lp.use_count() << '\n';
+    }
+}
+
+int main()
+{
+    std::shared_ptr<Base> p = std::make_shared<Derived>();
+
+    std::cout  << "before t1, p.use_count() = " << p.use_count() << '\n';
+    thr(p);//, t2(thr, p), t3(thr, p);
+    std::cout  << "after t1, p.use_count() = " << p.use_count() << '\n';
+    p.reset(); // release ownership from main
+    std::cout << "after reset(), p.use_count() = " << p.use_count() << '\n';
+    std::cout << "All threads completed, the last one deleted Derived\n";
+}
+```
+after ths() function, the corresponding pointers because of the function are released, so output:
+```
+  Base::Base()
+  Derived::Derived()
+before t1, p.use_count() = 1
+before sleep, p.use_count() = 2
+in mutex, lp.use_count() = 3
+after t1, p.use_count() = 1
+  Derived::~Derived()
+  Base::~Base()
+after reset(), p.use_count() = 0
+All threads completed, the last one deleted Derived
+```
+```
+#include <iostream>
+#include <memory>
+#include <thread>
+#include <chrono>
+#include <mutex>
+
+struct Base
+{
+    Base() { std::cout << "  Base::Base()\n"; }
+    // Note: non-virtual destructor is OK here
+    ~Base() { std::cout << "  Base::~Base()\n"; }
+};
+
+struct Derived: public Base
+{
+    Derived() { std::cout << "  Derived::Derived()\n"; }
+    ~Derived() { std::cout << "  Derived::~Derived()\n"; }
+};
+
+void thr(std::shared_ptr<Base> p)
+{
+    std::cout  << "1st thr(): p.use_count() = " << p.use_count() << '\n';
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::shared_ptr<Base> lp = p; // thread-safe, even though the
+                                  // shared use_count is incremented
+    {
+        static std::mutex io_mutex;
+        std::lock_guard<std::mutex> lk(io_mutex);
+        std::cout  << "in mutex, lp.use_count() = " << lp.use_count() << '\n';
+    }
+}
+
+int main()
+{
+    std::shared_ptr<Base> p = std::make_shared<Derived>();
+
+    std::cout  << "before t1, p.use_count() = " << p.use_count() << '\n';
+    std::thread t1(thr, p);//, t2(thr, p), t3(thr, p);
+    std::cout  << "after t1, p.use_count() = " << p.use_count() << '\n';
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::cout  << "after sleep_for, p.use_count() = " << p.use_count() << '\n';
+    p.reset(); // release ownership from main
+    std::cout << "after reset(), p.use_count() = " << p.use_count() << '\n';
+    t1.join(); //t2.join(); t3.join();
+    std::cout << "All threads completed, the last one deleted Derived\n";
+}
+```
+Possible output:
+```
+  Base::Base()
+  Derived::Derived()
+before t1, p.use_count() = 1
+after t1, p.use_count() = 2
+1st thr(): p.use_count() = 2
+in mutex, lp.use_count() = 3
+after sleep_for, p.use_count() = 1
+  Derived::~Derived()
+  Base::~Base()
+after reset(), p.use_count() = 0
+All threads completed, the last one deleted Derived
+```
+## On References and Pointers
+- why do you have to use pointer? when creating object using new keyword, it returns a address allocated on heap;
+- when to use new then? The new operator should only be used if the data object should remain in memory until delete is called. Otherwise if the new operator is not used, the object is automatically destroyed when it goes out of scope. In other words, the objects using new are cleaned up manually while other objects are automatically cleaned when they go out of scope.
+
+You should use new when you wish an obj
+
+Method 1 (using new)
+
+Allocates memory for the object on the free store (This is frequently the same thing as the heap)
+Requires you to explicitly delete your object later. (If you don't delete it, you could create a memory leak)
+Memory stays allocated until you delete it. (i.e. you could return an object that you created using new)
+The example in the question will leak memory unless the pointer is deleted; and it should always be deleted, regardless of which control path is taken, or if exceptions are thrown.
+Method 2 (not using new)
+
+Allocates memory for the object on the stack (where all local variables go) There is generally less memory available for the stack; if you allocate too many objects, you risk stack overflow.
+You won't need to delete it later.
+Memory is no longer allocated when it goes out of scope. (i.e. you shouldn't return a pointer to an object on the stack)
+As far as which one to use; you choose the method that works best for you, given the above constraints.
+
+Some easy cases:
+
+If you don't want to worry about calling delete, (and the potential to cause memory leaks) you shouldn't use new.
+If you'd like to return a pointer to your object from a function, you must use new
+
+Anything allocated on the stack has to have a constant size, determined at compile-time (the compiler has to set the stack pointer correctly, or if the object is a member of another class, it has to adjust the size of that other class). That's why arrays in C# are reference types. They have to be, because with reference types, we can decide at runtime how much memory to ask for. And the same applies here. Only arrays with constant size (a size that can be determined at compile-time) can be allocated with automatic storage duration (on the stack). Dynamically sized arrays have to be allocated on the heap, by calling new.
+
+```
+void foo() {
+  bar b;
+  bar* b2 = new bar();
+}
+```
+This function creates three values worth considering:
+
+On line 1, it declares a variable b of type bar on the stack (automatic duration).
+
+On line 2, it declares a bar pointer b2 on the stack (automatic duration), and calls new, allocating a bar object on the heap. (dynamic duration).
+When the function returns, the following will happen: First, b2 goes out of scope (order of destruction is always opposite of order of construction). But b2 is just a pointer, so nothing happens, the memory it occupies is simply freed. And importantly, the memory it points to (the bar instance on the heap) is NOT touched. Only the pointer is freed, because only the pointer had automatic duration. Second, b goes out of scope, so since it has automatic duration, its destructor is called, and the memory is freed.
+
+And the barinstance on the heap? It's probably still there. No one bothered to delete it, so we've leaked memory.
+From this example, we can see that anything with automatic duration is guaranteed to have its destructor called when it goes out of scope. That's useful. But anything allocated on the heap lasts as long as we need it to, and can be dynamically sized, as in the case of arrays. That is also useful. We can use that to manage our memory allocations. What if the Foo class allocated some memory on the heap in its constructor, and deleted that memory in its destructor. Then we could get the best of both worlds, safe memory allocations that are guaranteed to be freed again, but without the limitations of forcing everything to be on the stack.
+    - examples?
+References are typically used to be able to modify a value passed to a function. They can also be used to pass a reference to an object instead of copying it to functions. But:
+References can never be null which means they cannot be used for optional values
+References do not have ownership semantics, so objects cannot be deleted using references
+To have a class optionally (dynamically) contain an object of another class one must use a pointer. And pointers provide mechanisms for controlling the ownership of the dynamically created object.
+
+https://www.geeksforgeeks.org/when-do-we-pass-arguments-by-reference-or-pointer/
